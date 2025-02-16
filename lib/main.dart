@@ -10,6 +10,8 @@ void main() {
 }
 
 class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
   @override
   _MyAppState createState() => _MyAppState();
 }
@@ -27,7 +29,7 @@ class _MyAppState extends State<MyApp> {
         '/goals': (context) => GoalsScreen(),
         '/progress': (context) => ProgressScreen(),
         '/history': (context) => GoalHistoryScreen(
-              completedGoals: [],
+              completedGoals: const [],
             ),
         '/workouts': (context) => WorkoutsScreen()
       },
