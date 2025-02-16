@@ -28,7 +28,7 @@ class _MyAppState extends State<MyApp> {
       routes: {
         '/goals': (context) => GoalsScreen(),
         '/progress': (context) => ProgressScreen(),
-        '/history': (context) => GoalHistoryScreen(
+        '/history': (context) => HistoryScreen(
               completedGoals: const [],
             ),
         '/workouts': (context) => WorkoutsScreen()

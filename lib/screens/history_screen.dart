@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import '../models/goal.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class GoalHistoryScreen extends StatefulWidget {
+class HistoryScreen extends StatefulWidget {
   final List<Goal> completedGoals;
 
-  const GoalHistoryScreen({super.key, required this.completedGoals});
+  const HistoryScreen({super.key, required this.completedGoals});
 
   @override
-  _GoalHistoryScreenState createState() => _GoalHistoryScreenState();
+  _HistoryScreenState createState() => _HistoryScreenState();
 }
 
-class _GoalHistoryScreenState extends State<GoalHistoryScreen> {
+class _HistoryScreenState extends State<HistoryScreen> {
   late List<Goal> _completedGoals;
 
   @override

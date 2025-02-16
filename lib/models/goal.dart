@@ -11,7 +11,6 @@ class Goal {
     this.isCompleted = false,
   });
 
-  // Метод для преобразования объекта Goal в JSON
   Map<String, dynamic> toJson() {
     return {
       'title': title,
@@ -20,22 +19,42 @@ class Goal {
     };
   }
 
-  // Метод для создания объекта Goal из JSON
   factory Goal.fromJson(Map<String, dynamic> json) {
     return Goal(
       title: json['title'],
-      dueDate: DateTime.parse(json['dueDate']),
+      dueDate: DateTime.tryParse(json['dueDate'] ?? '') ?? DateTime.now(),
       isCompleted: json['isCompleted'] ?? false,
     );
   }
 
-  // Метод для преобразования списка целей в JSON-строку
   static String encode(List<Goal> goals) => jsonEncode(
         goals.map((goal) => goal.toJson()).toList(),
       );
 
-  // Метод для декодирования списка целей из JSON-строки
-  static List<Goal> decode(String goals) => (jsonDecode(goals) as List<dynamic>)
-      .map((item) => Goal.fromJson(item))
-      .toList();
+  static List<Goal> decode(String goals) {
+    try {
+      return (jsonDecode(goals) as List<dynamic>)
+          .map((item) => Goal.fromJson(item))
+          .toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Goal copyWith({
+    String? title,
+    DateTime? dueDate,
+    bool? isCompleted,
+  }) {
+    return Goal(
+      title: title ?? this.title,
+      dueDate: dueDate ?? this.dueDate,
+      isCompleted: isCompleted ?? this.isCompleted,
+    );
+  }
+
+  @override
+  String toString() {
+    return 'Goal(title: $title, dueDate: $dueDate, isCompleted: $isCompleted)';
+  }
 }

@@ -103,7 +103,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => GoalHistoryScreen(
+        builder: (context) => HistoryScreen(
           completedGoals: _goals.where((g) => g.isCompleted).toList(),
         ),
       ),
