@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class GoalHistoryScreen extends StatefulWidget {
   final List<Goal> completedGoals;
 
-  GoalHistoryScreen({required this.completedGoals});
+  const GoalHistoryScreen({super.key, required this.completedGoals});
 
   @override
   _GoalHistoryScreenState createState() => _GoalHistoryScreenState();
@@ -38,10 +38,10 @@ class _GoalHistoryScreenState extends State<GoalHistoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('История целей'),
+        title: const Text('История целей'),
       ),
       body: _completedGoals.isEmpty
-          ? Center(child: Text('Нет завершённых целей'))
+          ? const Center(child: Text('Нет завершённых целей'))
           : ListView.builder(
               itemCount: _completedGoals.length,
               itemBuilder: (context, index) {
@@ -50,7 +50,7 @@ class _GoalHistoryScreenState extends State<GoalHistoryScreen> {
                   title: Text(goal.title),
                   subtitle: Text('Завершена: ${goal.dueDate.toLocal()}'),
                   trailing: IconButton(
-                    icon: Icon(Icons.delete),
+                    icon: const Icon(Icons.delete),
                     onPressed: () => _deleteGoal(goal),
                   ),
                 );

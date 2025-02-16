@@ -5,6 +5,8 @@ import '../models/goal.dart';
 import 'history_screen.dart'; // Импортируем экран истории целей
 
 class GoalsScreen extends StatefulWidget {
+  const GoalsScreen({super.key});
+
   @override
   _GoalsScreenState createState() => _GoalsScreenState();
 }
@@ -68,7 +70,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
     setState(() {
       goal.isCompleted = !goal.isCompleted;
       if (goal.isCompleted) {
-        Future.delayed(Duration(seconds: 2), () {
+        Future.delayed(const Duration(seconds: 2), () {
           if (mounted) {
             setState(() {
               _goals.remove(goal);
@@ -112,7 +114,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Цели'),
+        title: const Text('Цели'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -121,11 +123,11 @@ class _GoalsScreenState extends State<GoalsScreen> {
             // Форма для ввода целей
             TextField(
               controller: _titleController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Что сделать',
               ),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
@@ -136,23 +138,23 @@ class _GoalsScreenState extends State<GoalsScreen> {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.calendar_today),
+                  icon: const Icon(Icons.calendar_today),
                   onPressed: _selectDate,
                 ),
               ],
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _addGoal,
-              child: Text('Добавить цель'),
+              child: const Text('Добавить цель'),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             // Кнопка для просмотра истории целей
             ElevatedButton(
               onPressed: _viewHistory,
-              child: Text('Посмотреть историю выполненных целей'),
+              child: const Text('Посмотреть историю выполненных целей'),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             // Список целей
             Expanded(
               child: ListView.builder(
@@ -161,9 +163,9 @@ class _GoalsScreenState extends State<GoalsScreen> {
                   final goal = _goals[index];
                   return AnimatedOpacity(
                     opacity: goal.isCompleted ? 0.0 : 1.0,
-                    duration: Duration(seconds: 1),
+                    duration: const Duration(seconds: 1),
                     child: Card(
-                      margin: EdgeInsets.symmetric(vertical: 8.0),
+                      margin: const EdgeInsets.symmetric(vertical: 8.0),
                       child: ListTile(
                         title: Text(
                           goal.title,

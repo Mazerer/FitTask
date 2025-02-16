@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 
 class WorkoutsScreen extends StatelessWidget {
+  const WorkoutsScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Тренировочные планы'),
+        title: const Text('Тренировочные планы'),
       ),
-      body: Center(
+      body: const Center(
         child: Text('Экран тренировочных планов'),
       ),
     );

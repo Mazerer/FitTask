@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
+// Главный экран
 class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('FitTask'),
+        title: const Text('FitTask'),
       ),
       body: Center(
         child: Column(
@@ -15,25 +18,25 @@ class HomeScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.pushNamed(context, '/goals');
               },
-              child: Text('Цели'),
+              child: const Text('Цели'),
             ),
             ElevatedButton(
               onPressed: () {
                 Navigator.pushNamed(context, '/history');
               },
-              child: Text('История целей'),
+              child: const Text('История целей'),
             ),
             ElevatedButton(
               onPressed: () {
                 Navigator.pushNamed(context, '/workouts');
               },
-              child: Text('Тренировки'),
+              child: const Text('Тренировки'),
             ),
             ElevatedButton(
               onPressed: () {
                 Navigator.pushNamed(context, '/progress');
               },
-              child: Text('Прогресс'),
+              child: const Text('Прогресс'),
             ),
           ],
         ),
