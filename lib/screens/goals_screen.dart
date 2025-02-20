@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/goal.dart';
-import 'history_screen.dart'; // Импортируем экран истории целей
 
 class GoalsScreen extends StatefulWidget {
   const GoalsScreen({super.key});
@@ -24,29 +23,37 @@ class _GoalsScreenState extends State<GoalsScreen> {
 
   Future<void> _loadGoals() async {
     final prefs = await SharedPreferences.getInstance();
-    final goalsData = prefs.getStringList('goals') ?? [];
-    setState(() {
-      _goals.clear();
-      for (var goalData in goalsData) {
-        final parts = goalData.split('|');
-        if (parts.length == 3) {
-          final title = parts[0];
-          final dueDate = DateTime.parse(parts[1]);
-          final isCompleted = parts[2] == 'true';
-          _goals.add(
-              Goal(title: title, dueDate: dueDate, isCompleted: isCompleted));
-        }
-      }
-    });
+    final activeGoalsString = prefs.getString('activeGoals');
+    print('Загрузка activeGoals: $activeGoalsString'); // Отладка
+    if (activeGoalsString != null) {
+      setState(() {
+        _goals.clear();
+        _goals.addAll(Goal.decode(activeGoalsString));
+        print('Декодировано в _goals: $_goals'); // Отладка
+      });
+    } else {
+      print('Нет данных в activeGoals'); // Отладка
+    }
   }
 
   Future<void> _saveGoals() async {
     final prefs = await SharedPreferences.getInstance();
-    final goalsData = _goals
-        .map((goal) =>
-            '${goal.title}|${goal.dueDate.toIso8601String()}|${goal.isCompleted}')
-        .toList();
-    prefs.setStringList('goals', goalsData);
+    final encodedGoals = Goal.encode(_goals);
+    final success = await prefs.setString('activeGoals', encodedGoals);
+    print('Сохранение activeGoals: $encodedGoals, успех: $success'); // Отладка
+  }
+
+  Future<void> _saveCompletedGoal(Goal goal) async {
+    final prefs = await SharedPreferences.getInstance();
+    final completedGoalsString = prefs.getString('completedGoals') ?? '[]';
+    print('Текущие completedGoals: $completedGoalsString'); // Отладка
+    final completedGoals = Goal.decode(completedGoalsString);
+    completedGoals.add(goal);
+    final encodedCompletedGoals = Goal.encode(completedGoals);
+    final success =
+        await prefs.setString('completedGoals', encodedCompletedGoals);
+    print(
+        'Сохранение completedGoals: $encodedCompletedGoals, успех: $success'); // Отладка
   }
 
   void _addGoal() {
@@ -54,32 +61,34 @@ class _GoalsScreenState extends State<GoalsScreen> {
     final dueDate = _selectedDate;
 
     if (title.isEmpty || dueDate == null) {
+      print('Ошибка: пустой title или dueDate'); // Отладка
       return;
     }
 
     setState(() {
-      _goals.add(Goal(title: title, dueDate: dueDate));
+      final newGoal = Goal(title: title, dueDate: dueDate);
+      _goals.add(newGoal);
       _titleController.clear();
       _selectedDate = null;
+      print('Добавлена цель: $newGoal'); // Отладка
     });
-
-    _saveGoals(); // Сохраняем цели после добавления
+    _saveGoals();
   }
 
   void _toggleGoal(Goal goal) {
     setState(() {
-      goal.isCompleted = !goal.isCompleted;
-      if (goal.isCompleted) {
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) {
-            setState(() {
-              _goals.remove(goal);
-              _saveGoals(); // Обновляем сохранение после удаления
-            });
-          }
-        });
+      if (!goal.isCompleted) {
+        final completedGoal = goal.copyWith(
+          isCompleted: true,
+          completionDate: DateTime.now(),
+        );
+        _goals.removeWhere((g) => g.id == goal.id);
+        print('Цель завершена: $completedGoal'); // Отладка
+        print('Оставшиеся activeGoals: $_goals'); // Отладка
+        _saveGoals();
+        _saveCompletedGoal(completedGoal);
       } else {
-        _saveGoals(); // Обновляем сохранение при изменении статуса
+        print('Цель уже завершена: $goal'); // Отладка
       }
     });
   }
@@ -95,19 +104,14 @@ class _GoalsScreenState extends State<GoalsScreen> {
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
+        print('Выбрана дата: $_selectedDate'); // Отладка
       });
     }
   }
 
   void _viewHistory() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => HistoryScreen(
-          completedGoals: _goals.where((g) => g.isCompleted).toList(),
-        ),
-      ),
-    );
+    print('Переход в HistoryScreen'); // Отладка
+    Navigator.pushNamed(context, '/history');
   }
 
   @override
@@ -120,12 +124,9 @@ class _GoalsScreenState extends State<GoalsScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Форма для ввода целей
             TextField(
               controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Что сделать',
-              ),
+              decoration: const InputDecoration(labelText: 'Что сделать'),
             ),
             const SizedBox(height: 10),
             Row(
@@ -149,13 +150,11 @@ class _GoalsScreenState extends State<GoalsScreen> {
               child: const Text('Добавить цель'),
             ),
             const SizedBox(height: 20),
-            // Кнопка для просмотра истории целей
             ElevatedButton(
               onPressed: _viewHistory,
               child: const Text('Посмотреть историю выполненных целей'),
             ),
             const SizedBox(height: 20),
-            // Список целей
             Expanded(
               child: ListView.builder(
                 itemCount: _goals.length,
@@ -183,9 +182,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
                                 : Icons.circle,
                             color: goal.isCompleted ? Colors.green : null,
                           ),
-                          onPressed: () {
-                            _toggleGoal(goal);
-                          },
+                          onPressed: () => _toggleGoal(goal),
                         ),
                         tileColor: goal.isCompleted ? Colors.green[100] : null,
                       ),

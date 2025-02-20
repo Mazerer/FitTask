@@ -6,17 +6,12 @@ import 'screens/history_screen.dart';
 import 'screens/workouts_screen.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  @override
-  _MyAppState createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -24,14 +19,12 @@ class _MyAppState extends State<MyApp> {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: HomeScreen(),
+      home: const HomeScreen(),
       routes: {
-        '/goals': (context) => GoalsScreen(),
-        '/progress': (context) => ProgressScreen(),
-        '/history': (context) => HistoryScreen(
-              completedGoals: const [],
-            ),
-        '/workouts': (context) => WorkoutsScreen()
+        '/goals': (context) => const GoalsScreen(),
+        '/progress': (context) => const ProgressScreen(),
+        '/history': (context) => const HistoryScreen(),
+        '/workouts': (context) => const WorkoutsScreen(),
       },
     );
   }

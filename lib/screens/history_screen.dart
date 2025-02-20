@@ -3,39 +3,53 @@ import '../models/goal.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HistoryScreen extends StatefulWidget {
-  final List<Goal> completedGoals;
-
-  const HistoryScreen({super.key, required this.completedGoals});
+  const HistoryScreen({super.key});
 
   @override
   _HistoryScreenState createState() => _HistoryScreenState();
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  late List<Goal> _completedGoals;
+  List<Goal> _completedGoals = [];
 
   @override
   void initState() {
     super.initState();
-    _completedGoals = widget.completedGoals;
+    print('Инициализация HistoryScreen'); // Отладка
+    _loadCompletedGoals();
+  }
+
+  Future<void> _loadCompletedGoals() async {
+    final prefs = await SharedPreferences.getInstance();
+    final completedGoalsString = prefs.getString('completedGoals');
+    print(
+        'Загружено из SharedPreferences (completedGoals): $completedGoalsString'); // Отладка
+    if (completedGoalsString != null) {
+      setState(() {
+        _completedGoals = Goal.decode(completedGoalsString);
+        print('Декодировано в _completedGoals: $_completedGoals'); // Отладка
+      });
+    } else {
+      print('Нет данных в completedGoals'); // Отладка
+    }
   }
 
   Future<void> _deleteGoal(Goal goal) async {
     setState(() {
-      _completedGoals.remove(goal);
+      _completedGoals.removeWhere((g) => g.id == goal.id);
+      print('Удалена цель из _completedGoals: $goal'); // Отладка
+      print('Оставшиеся completedGoals: $_completedGoals'); // Отладка
     });
-
-    // Обновляем сохраненные данные
     final prefs = await SharedPreferences.getInstance();
-    final goalsData = _completedGoals
-        .map((goal) =>
-            '${goal.title}|${goal.dueDate.toIso8601String()}|${goal.isCompleted}')
-        .toList();
-    prefs.setStringList('goals', goalsData);
+    final encodedGoals = Goal.encode(_completedGoals);
+    final success = await prefs.setString('completedGoals', encodedGoals);
+    print(
+        'Сохранение completedGoals после удаления: $encodedGoals, успех: $success'); // Отладка
   }
 
   @override
   Widget build(BuildContext context) {
+    print('Отрисовка HistoryScreen, текущие цели: $_completedGoals'); // Отладка
     return Scaffold(
       appBar: AppBar(
         title: const Text('История целей'),
@@ -48,7 +62,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 final goal = _completedGoals[index];
                 return ListTile(
                   title: Text(goal.title),
-                  subtitle: Text('Завершена: ${goal.dueDate.toLocal()}'),
+                  subtitle: goal.completionDate != null
+                      ? Text('Завершена: ${goal.completionDate!.toLocal()}')
+                      : Text('Дата завершения неизвестна'),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete),
                     onPressed: () => _deleteGoal(goal),
