@@ -78,17 +78,26 @@ class _GoalsScreenState extends State<GoalsScreen> {
   void _toggleGoal(Goal goal) {
     setState(() {
       if (!goal.isCompleted) {
-        final completedGoal = goal.copyWith(
-          isCompleted: true,
-          completionDate: DateTime.now(),
-        );
-        _goals.removeWhere((g) => g.id == goal.id);
-        print('Цель завершена: $completedGoal'); // Отладка
-        print('Оставшиеся activeGoals: $_goals'); // Отладка
-        _saveGoals();
-        _saveCompletedGoal(completedGoal);
-      } else {
-        print('Цель уже завершена: $goal'); // Отладка
+        // Помечаем цель как завершённую, но не удаляем сразу
+        goal.isCompleted = true;
+        goal.completionDate = DateTime.now();
+        print('Цель завершена: $goal'); // Отладка
+      }
+    });
+
+    // Ждём окончания анимации (1 секунда) перед удалением
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) {
+        setState(() {
+          final completedGoal = goal.copyWith(
+            isCompleted: true,
+            completionDate: goal.completionDate,
+          );
+          _goals.removeWhere((g) => g.id == goal.id);
+          print('Оставшиеся activeGoals: $_goals'); // Отладка
+          _saveGoals();
+          _saveCompletedGoal(completedGoal);
+        });
       }
     });
   }
@@ -162,7 +171,8 @@ class _GoalsScreenState extends State<GoalsScreen> {
                   final goal = _goals[index];
                   return AnimatedOpacity(
                     opacity: goal.isCompleted ? 0.0 : 1.0,
-                    duration: const Duration(seconds: 1),
+                    duration:
+                        const Duration(seconds: 1), // Длительность анимации
                     child: Card(
                       margin: const EdgeInsets.symmetric(vertical: 8.0),
                       child: ListTile(
