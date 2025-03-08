@@ -10,9 +10,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  uuid: ^3.0.7        # Последняя версия на момент моего знания
-  intl: ^0.18.1       # Последняя версия на момент моего знания
-  shared_preferences: ^2.2.3  # Последняя версия на момент моего знания
+  uuid: ^3.0.7        
+  intl: ^0.18.1       
+  shared_preferences: ^2.2.3  
   cupertino_icons: ^1.0.8
 
 dev_dependencies:
