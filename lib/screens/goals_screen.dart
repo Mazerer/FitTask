@@ -24,15 +24,15 @@ class _GoalsScreenState extends State<GoalsScreen> {
   Future<void> _loadGoals() async {
     final prefs = await SharedPreferences.getInstance();
     final activeGoalsString = prefs.getString('activeGoals');
-    print('Загрузка activeGoals: $activeGoalsString'); // Отладка
+    print('Загрузка activeGoals: $activeGoalsString');
     if (activeGoalsString != null) {
       setState(() {
         _goals.clear();
         _goals.addAll(Goal.decode(activeGoalsString));
-        print('Декодировано в _goals: $_goals'); // Отладка
+        print('Декодировано в _goals: $_goals');
       });
     } else {
-      print('Нет данных в activeGoals'); // Отладка
+      print('Нет данных в activeGoals');
     }
   }
 
@@ -40,20 +40,18 @@ class _GoalsScreenState extends State<GoalsScreen> {
     final prefs = await SharedPreferences.getInstance();
     final encodedGoals = Goal.encode(_goals);
     final success = await prefs.setString('activeGoals', encodedGoals);
-    print('Сохранение activeGoals: $encodedGoals, успех: $success'); // Отладка
+    print('Сохранение activeGoals: $encodedGoals, успех: $success');
   }
 
   Future<void> _saveCompletedGoal(Goal goal) async {
     final prefs = await SharedPreferences.getInstance();
     final completedGoalsString = prefs.getString('completedGoals') ?? '[]';
-    print('Текущие completedGoals: $completedGoalsString'); // Отладка
+    print('Текущие completedGoals: $completedGoalsString');
     final completedGoals = Goal.decode(completedGoalsString);
     completedGoals.add(goal);
     final encodedCompletedGoals = Goal.encode(completedGoals);
-    final success =
-        await prefs.setString('completedGoals', encodedCompletedGoals);
-    print(
-        'Сохранение completedGoals: $encodedCompletedGoals, успех: $success'); // Отладка
+    final success = await prefs.setString('completedGoals', encodedCompletedGoals);
+    print('Сохранение completedGoals: $encodedCompletedGoals, успех: $success');
   }
 
   void _addGoal() {
@@ -61,7 +59,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
     final dueDate = _selectedDate;
 
     if (title.isEmpty || dueDate == null) {
-      print('Ошибка: пустой title или dueDate'); // Отладка
+      print('Ошибка: пустой title или dueDate');
       return;
     }
 
@@ -70,7 +68,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
       _goals.add(newGoal);
       _titleController.clear();
       _selectedDate = null;
-      print('Добавлена цель: $newGoal'); // Отладка
+      print('Добавлена цель: $newGoal');
     });
     _saveGoals();
   }
@@ -78,15 +76,13 @@ class _GoalsScreenState extends State<GoalsScreen> {
   void _toggleGoal(Goal goal) {
     setState(() {
       if (!goal.isCompleted) {
-        // Помечаем цель как завершённую, но не удаляем сразу
         goal.isCompleted = true;
         goal.completionDate = DateTime.now();
-        print('Цель завершена: $goal'); // Отладка
+        print('Цель отмечена как завершённая: $goal');
       }
     });
 
-    // Ждём окончания анимации (1 секунда) перед удалением
-    Future.delayed(const Duration(seconds: 1), () {
+    Future.delayed(const Duration(milliseconds: 1500), () {
       if (mounted) {
         setState(() {
           final completedGoal = goal.copyWith(
@@ -94,7 +90,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
             completionDate: goal.completionDate,
           );
           _goals.removeWhere((g) => g.id == goal.id);
-          print('Оставшиеся activeGoals: $_goals'); // Отладка
+          print('Цель удалена из activeGoals: $_goals');
           _saveGoals();
           _saveCompletedGoal(completedGoal);
         });
@@ -108,18 +104,20 @@ class _GoalsScreenState extends State<GoalsScreen> {
       initialDate: DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
+      // firstDayOfWeek: DateTime.monday, // Раскомментируй после обновления Flutter
     );
 
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
-        print('Выбрана дата: $_selectedDate'); // Отладка
+        print('Выбрана дата: $_selectedDate');
+        print('Первый день недели (по локали): ${DateFormat('EEEE', 'ru').format(DateTime.now().subtract(Duration(days: DateTime.now().weekday - 1)))}');
       });
     }
   }
 
   void _viewHistory() {
-    print('Переход в HistoryScreen'); // Отладка
+    print('Переход в HistoryScreen');
     Navigator.pushNamed(context, '/history');
   }
 
@@ -144,7 +142,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
                   child: Text(
                     _selectedDate == null
                         ? 'Выберите дату'
-                        : DateFormat.yMd().format(_selectedDate!),
+                        : DateFormat.yMd('ru').format(_selectedDate!),
                   ),
                 ),
                 IconButton(
@@ -171,8 +169,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
                   final goal = _goals[index];
                   return AnimatedOpacity(
                     opacity: goal.isCompleted ? 0.0 : 1.0,
-                    duration:
-                        const Duration(seconds: 1), // Длительность анимации
+                    duration: const Duration(milliseconds: 1500),
                     child: Card(
                       margin: const EdgeInsets.symmetric(vertical: 8.0),
                       child: ListTile(
@@ -184,7 +181,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
                                 : TextDecoration.none,
                           ),
                         ),
-                        subtitle: Text(DateFormat.yMd().format(goal.dueDate)),
+                        subtitle: Text(DateFormat.yMd('ru').format(goal.dueDate)),
                         trailing: IconButton(
                           icon: Icon(
                             goal.isCompleted
