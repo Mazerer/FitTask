@@ -5,7 +5,6 @@ import 'screens/goals_screen.dart';
 import 'screens/progress_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/workouts_screen.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() {
   runApp(const MyApp());
@@ -26,7 +25,7 @@ class MyApp extends StatelessWidget {
         Locale('ru'),
         Locale('en'),
       ],
-      localizationsDelegates: [
+      localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
       ],
