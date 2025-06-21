@@ -14,6 +14,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
   final List<Goal> _goals = [];
   final _titleController = TextEditingController();
   DateTime? _selectedDate;
+  TimeOfDay? _selectedTime;
 
   @override
   void initState() {
@@ -57,17 +58,48 @@ class _GoalsScreenState extends State<GoalsScreen> {
   void _addGoal() {
     final title = _titleController.text;
     final dueDate = _selectedDate;
+    final dueTime = _selectedTime;
 
-    if (title.isEmpty || dueDate == null) {
-      print('Ошибка: пустой title или dueDate');
+    String? errorMessage;
+    if (title.isEmpty) {
+      errorMessage = 'Пожалуйста, введите заголовок цели.';
+    } else if (dueDate == null) {
+      errorMessage = 'Пожалуйста, выберите дату дедлайна.';
+    } else if (dueTime == null) {
+      errorMessage = 'Пожалуйста, выберите время дедлайна.';
+    }
+
+    if (errorMessage != null) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Ошибка'),
+          content: Text(errorMessage!),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('ОК'),
+            ),
+          ],
+        ),
+      );
       return;
     }
 
+    final fullDueDate = DateTime(
+      dueDate!.year,
+      dueDate.month,
+      dueDate.day,
+      dueTime!.hour,
+      dueTime.minute,
+    );
+
     setState(() {
-      final newGoal = Goal(title: title, dueDate: dueDate);
+      final newGoal = Goal(title: title, dueDate: fullDueDate);
       _goals.add(newGoal);
       _titleController.clear();
       _selectedDate = null;
+      _selectedTime = null;
       print('Добавлена цель: $newGoal');
     });
     _saveGoals();
@@ -82,7 +114,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
       }
     });
 
-    Future.delayed(const Duration(milliseconds: 1500), () {
+    Future.delayed(const Duration(milliseconds: 1000), () {
       if (mounted) {
         setState(() {
           final completedGoal = goal.copyWith(
@@ -104,7 +136,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
       initialDate: DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
-      // firstDayOfWeek: DateTime.monday, // Раскомментируй после обновления Flutter
+      locale: const Locale('ru'),
     );
 
     if (picked != null && picked != _selectedDate) {
@@ -116,8 +148,21 @@ class _GoalsScreenState extends State<GoalsScreen> {
     }
   }
 
+  Future<void> _selectTime() async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (picked != null && picked != _selectedTime) {
+      setState(() {
+        _selectedTime = picked;
+        print('Выбрано время: $_selectedTime');
+      });
+    }
+  }
+
   void _viewHistory() {
-    print('Переход в HistoryScreen');
+    print('Переход в историю');
     Navigator.pushNamed(context, '/history');
   }
 
@@ -126,77 +171,163 @@ class _GoalsScreenState extends State<GoalsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Цели'),
+        backgroundColor: Colors.deepPurple,
+        elevation: 0,
       ),
+      backgroundColor: Colors.deepPurple[50],
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(labelText: 'Что сделать'),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    _selectedDate == null
-                        ? 'Выберите дату'
-                        : DateFormat.yMd('ru').format(_selectedDate!),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.deepPurple.withOpacity(0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.calendar_today),
-                  onPressed: _selectDate,
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _addGoal,
-              child: const Text('Добавить цель'),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _viewHistory,
-              child: const Text('Посмотреть историю выполненных целей'),
+                ],
+              ),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _titleController,
+                    decoration: const InputDecoration(
+                      labelText: 'Что сделать',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _selectedDate == null
+                              ? 'Выберите дату'
+                              : DateFormat.yMd('ru').format(_selectedDate!),
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.calendar_today, color: Colors.deepPurple),
+                        onPressed: _selectDate,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _selectedTime == null
+                              ? 'Выберите время'
+                              : _selectedTime!.format(context),
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.access_time, color: Colors.deepPurple),
+                        onPressed: _selectTime,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.add),
+                      label: const Text('Добавить цель'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepPurple,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      onPressed: _addGoal,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.history),
+                      label: const Text('Посмотреть историю целей'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.deepPurple,
+                        side: const BorderSide(color: Colors.deepPurple),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      onPressed: _viewHistory,
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 20),
             Expanded(
-              child: ListView.builder(
-                itemCount: _goals.length,
-                itemBuilder: (ctx, index) {
-                  final goal = _goals[index];
-                  return AnimatedOpacity(
-                    opacity: goal.isCompleted ? 0.0 : 1.0,
-                    duration: const Duration(milliseconds: 1500),
-                    child: Card(
-                      margin: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: ListTile(
-                        title: Text(
-                          goal.title,
-                          style: TextStyle(
-                            decoration: goal.isCompleted
-                                ? TextDecoration.lineThrough
-                                : TextDecoration.none,
-                          ),
+              child: _goals.isEmpty
+                  ? Center(
+                      child: Text(
+                        'Нет активных целей',
+                        style: TextStyle(
+                          color: Colors.deepPurple[300],
+                          fontSize: 18,
                         ),
-                        subtitle: Text(DateFormat.yMd('ru').format(goal.dueDate)),
-                        trailing: IconButton(
-                          icon: Icon(
-                            goal.isCompleted
-                                ? Icons.check_circle
-                                : Icons.circle,
-                            color: goal.isCompleted ? Colors.green : null,
-                          ),
-                          onPressed: () => _toggleGoal(goal),
-                        ),
-                        tileColor: goal.isCompleted ? Colors.green[100] : null,
                       ),
+                    )
+                  : ListView.builder(
+                      itemCount: _goals.length,
+                      itemBuilder: (ctx, index) {
+                        final goal = _goals[index];
+                        return AnimatedOpacity(
+                          opacity: goal.isCompleted ? 0.0 : 1.0,
+                          duration: const Duration(milliseconds: 1000),
+                          child: Card(
+                            margin: const EdgeInsets.symmetric(vertical: 8.0),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 3,
+                            color: goal.isCompleted
+                                ? Colors.green[100]
+                                : Colors.white,
+                            child: ListTile(
+                              title: Text(
+                                goal.title,
+                                style: TextStyle(
+                                  decoration: goal.isCompleted
+                                      ? TextDecoration.lineThrough
+                                      : TextDecoration.none,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 17,
+                                ),
+                              ),
+                              subtitle: Text(
+                                'Дедлайн: ${DateFormat('dd.MM.yyyy HH:mm').format(goal.dueDate)}',
+                                style: const TextStyle(fontSize: 15),
+                              ),
+                              trailing: IconButton(
+                                icon: Icon(
+                                  goal.isCompleted
+                                      ? Icons.check_circle
+                                      : Icons.radio_button_unchecked,
+                                  color: goal.isCompleted
+                                      ? Colors.green
+                                      : Colors.deepPurple,
+                                ),
+                                onPressed: () => _toggleGoal(goal),
+                              ),
+                              tileColor: Colors.transparent,
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
           ],
         ),

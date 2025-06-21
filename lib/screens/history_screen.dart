@@ -28,32 +28,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     if (completedGoalsString == null || completedGoalsString == '[]') {
       // Тестовые данные, если история пуста
-      _completedGoals = [
-        Goal(
-          title: 'Цель 1 (Март 2025)',
-          dueDate: DateTime(2025, 3, 10),
-          isCompleted: true,
-          completionDate: DateTime(2025, 3, 10, 14, 30),
-        ),
-        Goal(
-          title: 'Цель 2 (Март 2025)',
-          dueDate: DateTime(2025, 3, 8),
-          isCompleted: true,
-          completionDate: DateTime(2025, 3, 8, 9, 15),
-        ),
-        Goal(
-          title: 'Цель 3 (Февраль 2025)',
-          dueDate: DateTime(2025, 2, 15),
-          isCompleted: true,
-          completionDate: DateTime(2025, 2, 15, 12, 0),
-        ),
-        Goal(
-          title: 'Цель 4 (Январь 2025)',
-          dueDate: DateTime(2025, 1, 20),
-          isCompleted: true,
-          completionDate: DateTime(2025, 1, 20, 16, 45),
-        ),
-      ];
       final encodedGoals = Goal.encode(_completedGoals);
       await prefs.setString('completedGoals', encodedGoals);
       print('Созданы тестовые данные: $encodedGoals');
@@ -123,27 +97,40 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('История целей'),
+        backgroundColor: Colors.deepPurple,
+        elevation: 0,
       ),
+      backgroundColor: Colors.deepPurple[50],
       body: _completedGoals.isEmpty
-          ? const Center(child: Text('Нет завершённых целей'))
+          ? Center(
+              child: Text(
+                'Нет завершённых целей',
+                style: TextStyle(
+                  color: Colors.deepPurple[300],
+                  fontSize: 18,
+                ),
+              ),
+            )
           : ListView.builder(
               itemCount: _goalsByMonth.keys.length,
               itemBuilder: (context, index) {
                 final monthKey = _goalsByMonth.keys.elementAt(index);
                 final goalsForMonth = _goalsByMonth[monthKey]!;
-                final monthName = DateFormat.yMMMM('ru')
-                    .format(monthKey); // Например, "Март 2025"
+                final monthName = DateFormat.yMMMM('ru').format(monthKey);
 
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0, vertical: 12.0),
                       child: Text(
                         monthName,
                         style: const TextStyle(
-                          fontSize: 20,
+                          fontSize: 22,
                           fontWeight: FontWeight.bold,
+                          color: Colors.deepPurple,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ),
@@ -155,18 +142,51 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         final goal = goalsForMonth[goalIndex];
                         return Card(
                           margin: const EdgeInsets.symmetric(
-                              horizontal: 16.0, vertical: 4.0),
+                              horizontal: 16.0, vertical: 6.0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 3,
+                          color: Colors.white,
                           child: ListTile(
-                            title: Text(goal.title),
+                            leading: Icon(
+                              Icons.flag,
+                              color: Colors.deepPurple[300],
+                            ),
+                            title: Text(
+                              goal.title,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 17,
+                              ),
+                            ),
                             subtitle: goal.completionDate != null
-                                ? Text(
-                                    'Завершена: ${DateFormat('dd.MM.yyyy HH:mm').format(goal.completionDate!.toLocal())}',
+                                ? Padding(
+                                    padding: const EdgeInsets.only(top: 4.0),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Завершена: ${DateFormat('dd.MM.yyyy HH:mm').format(goal.completionDate!.toLocal())}',
+                                          style: const TextStyle(fontSize: 15),
+                                        ),
+                                        Text(
+                                          'Дедлайн: ${DateFormat('dd.MM.yyyy HH:mm').format(goal.dueDate.toLocal())}',
+                                          style: const TextStyle(
+                                              fontSize: 15,
+                                              color: Colors.deepPurple),
+                                        ),
+                                      ],
+                                    ),
                                   )
                                 : const Text('Дата завершения неизвестна'),
                             trailing: IconButton(
-                              icon: const Icon(Icons.delete),
+                              icon: const Icon(Icons.delete, color: Colors.redAccent),
                               onPressed: () => _deleteGoal(goal),
+                              tooltip: 'Удалить',
                             ),
+                            tileColor: Colors.transparent,
                           ),
                         );
                       },
