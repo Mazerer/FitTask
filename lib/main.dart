@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 import 'screens/home_screen.dart';
 import 'screens/goals_screen.dart';
 import 'screens/progress_screen.dart';
@@ -7,6 +9,8 @@ import 'screens/history_screen.dart';
 import 'screens/workouts_screen.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  tz.initializeTimeZones();
   runApp(const MyApp());
 }
 

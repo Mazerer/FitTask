@@ -1,8 +1,16 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
+import 'package:device_info_plus/device_info_plus.dart';
 import '../models/goal.dart';
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
 
 class GoalsScreen extends StatefulWidget {
   const GoalsScreen({super.key});
@@ -21,8 +29,40 @@ class _GoalsScreenState extends State<GoalsScreen> {
   @override
   void initState() {
     super.initState();
+    _initNotifications();
     _loadGoals().then((_) => _checkOverdueGoals());
-    _startOverdueTimer(); // <--- запуск таймера
+    _startOverdueTimer();
+  }
+
+  Future<void> _initNotifications() async {
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
+
+    // --- Создание канала уведомлений ---
+    const AndroidNotificationChannel channel = AndroidNotificationChannel(
+      'goals_channel',
+      'Уведомления целей',
+      importance: Importance.max,
+    );
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channel);
+
+    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+
+    // --- Запрос разрешения на уведомления для Android 13+ ---
+    if (Platform.isAndroid) {
+      final androidInfo = await DeviceInfoPlugin().androidInfo;
+      if (androidInfo.version.sdkInt >= 33) {
+        await flutterLocalNotificationsPlugin
+            .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>()
+            ?.requestNotificationsPermission();
+      }
+    }
   }
 
   @override
@@ -83,6 +123,21 @@ class _GoalsScreenState extends State<GoalsScreen> {
         goal.completionDate = goal.dueDate;
         goal.isOverdue = true;
         await _saveCompletedGoal(goal);
+
+        // --- Уведомление о просроченной цели ---
+        await flutterLocalNotificationsPlugin.show(
+          goal.id.hashCode + 10000, // уникальный id для уведомления
+          'FitTask',
+          'Цель просрочена: ${goal.title}',
+          const NotificationDetails(
+            android: AndroidNotificationDetails(
+              'goals_channel',
+              'Уведомления целей',
+              importance: Importance.max,
+              priority: Priority.high,
+            ),
+          ),
+        );
       }
       setState(() {
         _goals.removeWhere((g) => overdueGoals.contains(g));
@@ -153,6 +208,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
       _selectedDate = null;
       _selectedTime = null;
       print('Добавлена цель: $newGoal');
+      _scheduleGoalNotifications(newGoal); // <-- переместили сюда
     });
     _saveGoals();
   }
@@ -216,6 +272,57 @@ class _GoalsScreenState extends State<GoalsScreen> {
   void _viewHistory() {
     print('Переход в историю');
     Navigator.pushNamed(context, '/history');
+  }
+
+  void _scheduleGoalNotifications(Goal goal) {
+    final now = DateTime.now();
+    final due = goal.dueDate;
+
+    final List<Map<String, dynamic>> notifications = [
+      {
+        'delay': due.subtract(const Duration(days: 3)).difference(now),
+        'text': 'Через 3 дня дедлайн по цели: ${goal.title}',
+        'id': goal.id.hashCode + 1,
+      },
+      {
+        'delay': due.subtract(const Duration(days: 1)).difference(now),
+        'text': 'Завтра дедлайн по цели: ${goal.title}',
+        'id': goal.id.hashCode + 2,
+      },
+      {
+        'delay': due.subtract(const Duration(hours: 12)).difference(now),
+        'text': 'Через 12 часов дедлайн по цели: ${goal.title}',
+        'id': goal.id.hashCode + 3,
+      },
+      {
+        'delay': due.subtract(const Duration(hours: 1)).difference(now),
+        'text': 'Через 1 час дедлайн по цели: ${goal.title}',
+        'id': goal.id.hashCode + 4,
+      },
+    ];
+
+    for (final notif in notifications) {
+      final delay = notif['delay'] as Duration;
+      if (delay.inSeconds > 0) {
+        Timer(delay, () async {
+          await flutterLocalNotificationsPlugin.show(
+            notif['id'] as int,
+            'FitTask',
+            notif['text'] as String,
+            const NotificationDetails(
+              android: AndroidNotificationDetails(
+                'goals_channel',
+                'Уведомления целей',
+                importance: Importance.max,
+                priority: Priority.high,
+              ),
+            ),
+          );
+          print('Показано уведомление: ${notif['text']}');
+        });
+        print('Таймер для уведомления: ${notif['text']} через ${delay.inSeconds} секунд');
+      }
+    }
   }
 
   @override
