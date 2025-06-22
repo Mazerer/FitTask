@@ -7,6 +7,7 @@ class Goal {
   DateTime dueDate;
   bool isCompleted;
   DateTime? completionDate;
+  bool isOverdue;
 
   Goal({
     String? id,
@@ -14,6 +15,7 @@ class Goal {
     required this.dueDate,
     this.isCompleted = false,
     this.completionDate,
+    this.isOverdue = false,
   }) : id = id ?? const Uuid().v4();
 
   Map<String, dynamic> toJson() {
@@ -23,6 +25,7 @@ class Goal {
       'dueDate': dueDate.toIso8601String(),
       'isCompleted': isCompleted,
       'completionDate': completionDate?.toIso8601String(),
+      'isOverdue': isOverdue,
     };
   }
 
@@ -35,6 +38,7 @@ class Goal {
       completionDate: json['completionDate'] != null
           ? DateTime.tryParse(json['completionDate'])
           : null,
+      isOverdue: json['isOverdue'] ?? false,
     );
   }
 
@@ -59,6 +63,7 @@ class Goal {
     DateTime? dueDate,
     bool? isCompleted,
     DateTime? completionDate,
+    bool? isOverdue,
   }) {
     return Goal(
       id: id ?? this.id,
@@ -66,11 +71,12 @@ class Goal {
       dueDate: dueDate ?? this.dueDate,
       isCompleted: isCompleted ?? this.isCompleted,
       completionDate: completionDate ?? this.completionDate,
+      isOverdue: isOverdue ?? this.isOverdue,
     );
   }
 
   @override
   String toString() {
-    return 'Goal(id: $id, title: $title, dueDate: $dueDate, isCompleted: $isCompleted, completionDate: $completionDate)';
+    return 'Goal(id: $id, title: $title, dueDate: $dueDate, isCompleted: $isCompleted, completionDate: $completionDate, isOverdue: $isOverdue)';
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,11 +16,26 @@ class _GoalsScreenState extends State<GoalsScreen> {
   final _titleController = TextEditingController();
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
+  Timer? _overdueTimer; // <--- добавьте это поле
 
   @override
   void initState() {
     super.initState();
-    _loadGoals();
+    _loadGoals().then((_) => _checkOverdueGoals());
+    _startOverdueTimer(); // <--- запуск таймера
+  }
+
+  @override
+  void dispose() {
+    _overdueTimer?.cancel(); // <--- отмена таймера при уничтожении
+    super.dispose();
+  }
+
+  void _startOverdueTimer() {
+    _overdueTimer?.cancel();
+    _overdueTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      _checkOverdueGoals();
+    });
   }
 
   Future<void> _loadGoals() async {
@@ -55,18 +71,54 @@ class _GoalsScreenState extends State<GoalsScreen> {
     print('Сохранение completedGoals: $encodedCompletedGoals, успех: $success');
   }
 
+  Future<void> _checkOverdueGoals() async {
+    final now = DateTime.now();
+    final overdueGoals = _goals.where((g) =>
+      !g.isCompleted && g.dueDate.isBefore(now)
+    ).toList();
+
+    if (overdueGoals.isNotEmpty) {
+      for (var goal in overdueGoals) {
+        goal.isCompleted = true;
+        goal.completionDate = goal.dueDate;
+        goal.isOverdue = true;
+        await _saveCompletedGoal(goal);
+      }
+      setState(() {
+        _goals.removeWhere((g) => overdueGoals.contains(g));
+      });
+      _saveGoals();
+    }
+  }
+
   void _addGoal() {
     final title = _titleController.text;
     final dueDate = _selectedDate;
     final dueTime = _selectedTime;
 
     String? errorMessage;
+    final now = DateTime.now();
+
     if (title.isEmpty) {
       errorMessage = 'Пожалуйста, введите заголовок цели.';
     } else if (dueDate == null) {
       errorMessage = 'Пожалуйста, выберите дату дедлайна.';
     } else if (dueTime == null) {
       errorMessage = 'Пожалуйста, выберите время дедлайна.';
+    } else {
+      final selectedDateOnly = DateTime(dueDate.year, dueDate.month, dueDate.day);
+      final nowDateOnly = DateTime(now.year, now.month, now.day);
+
+      if (selectedDateOnly.isBefore(nowDateOnly)) {
+        errorMessage = 'Вы выбрали дату, которая уже прошла!';
+      } else if (selectedDateOnly.isAtSameMomentAs(nowDateOnly)) {
+        final selectedDateTime = DateTime(
+          dueDate.year, dueDate.month, dueDate.day, dueTime.hour, dueTime.minute,
+        );
+        if (selectedDateTime.isBefore(now)) {
+          errorMessage = 'Вы выбрали время, которое уже прошло!';
+        }
+      }
     }
 
     if (errorMessage != null) {

@@ -8,6 +8,7 @@ environment:
   sdk: ^3.5.3
 
 dependencies:
+  flutter_time_picker_spinner: ^2.0.0
   flutter:
     sdk: flutter
   flutter_localizations:

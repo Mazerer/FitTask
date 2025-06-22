@@ -45,9 +45,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final Map<DateTime, List<Goal>> groupedGoals = {};
 
     for (var goal in _completedGoals) {
-      if (goal.completionDate == null)
-        continue; // Пропускаем цели без даты завершения
-
+      if (goal.completionDate == null) continue; // Пропускаем цели без даты завершения
       // Извлекаем год и месяц из completionDate
       final year = goal.completionDate!.year;
       final month = goal.completionDate!.month;
@@ -168,8 +166,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          'Завершена: ${DateFormat('dd.MM.yyyy HH:mm').format(goal.completionDate!.toLocal())}',
-                                          style: const TextStyle(fontSize: 15),
+                                          goal.isOverdue == true
+                                              ? 'Просрочено'
+                                              : 'Завершена: ${DateFormat('dd.MM.yyyy HH:mm').format(goal.completionDate!.toLocal())}',
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            color:
+                                                goal.isOverdue == true
+                                                    ? Colors.red
+                                                    : null,
+                                            fontWeight: goal.isOverdue == true
+                                                ? FontWeight.bold
+                                                : null,
+                                          ),
                                         ),
                                         Text(
                                           'Дедлайн: ${DateFormat('dd.MM.yyyy HH:mm').format(goal.dueDate.toLocal())}',
