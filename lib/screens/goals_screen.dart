@@ -14,7 +14,7 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 
 class GoalsScreen extends StatefulWidget {
   const GoalsScreen({super.key});
-
+  
   @override
   _GoalsScreenState createState() => _GoalsScreenState();
 }
