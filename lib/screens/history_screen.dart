@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/goal.dart';
+import '../background/goals_background.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -17,7 +18,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   void initState() {
     super.initState();
-    _loadCompletedGoals();
+    // Синхронизируем состояние (проверяем и переносим просроченные)
+    checkOverdueGoalsInBackground().then((_) {
+      _loadCompletedGoals();
+    });
   }
 
   Future<void> _loadCompletedGoals() async {

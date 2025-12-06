@@ -1,11 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'dart:io';
+import 'package:device_info_plus/device_info_plus.dart';
 
 // Главный экран
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
+  Future<void> _requestNotificationPermission() async {
+    if (Platform.isAndroid) {
+      final androidInfo = await DeviceInfoPlugin().androidInfo;
+      if (androidInfo.version.sdkInt >= 33) {
+        final plugin = FlutterLocalNotificationsPlugin();
+        await plugin
+            .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>()
+            ?.requestNotificationsPermission();
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Запросить разрешение при открытии экрана
+    _requestNotificationPermission();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('FitTask'),

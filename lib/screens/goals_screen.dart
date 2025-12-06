@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:device_info_plus/device_info_plus.dart';
 import '../models/goal.dart';
+import '../background/goals_background.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -30,7 +30,13 @@ class _GoalsScreenState extends State<GoalsScreen> {
   void initState() {
     super.initState();
     _initNotifications();
-    _loadGoals().then((_) => _checkOverdueGoals());
+    _loadGoals().then((_) {
+      // Сразу после загрузки целей проверяем фон и синхронизируем
+      checkOverdueGoalsInBackground().then((_) {
+        // После проверки перезагружаем целии из SharedPreferences
+        _loadGoals();
+      });
+    });
     _startOverdueTimer();
   }
 
@@ -80,16 +86,12 @@ class _GoalsScreenState extends State<GoalsScreen> {
 
   Future<void> _loadGoals() async {
     final prefs = await SharedPreferences.getInstance();
-    final activeGoalsString = prefs.getString('activeGoals');
-    print('Загрузка activeGoals: $activeGoalsString');
-    if (activeGoalsString != null) {
+    final goalsString = prefs.getString('activeGoals');
+    if (goalsString != null) {
       setState(() {
         _goals.clear();
-        _goals.addAll(Goal.decode(activeGoalsString));
-        print('Декодировано в _goals: $_goals');
+        _goals.addAll(Goal.decode(goalsString));
       });
-    } else {
-      print('Нет данных в activeGoals');
     }
   }
 
@@ -274,55 +276,59 @@ class _GoalsScreenState extends State<GoalsScreen> {
     Navigator.pushNamed(context, '/history');
   }
 
-  void _scheduleGoalNotifications(Goal goal) {
-    final now = DateTime.now();
-    final due = goal.dueDate;
+  void _scheduleGoalNotifications(Goal goal) async {
+    final now = tz.TZDateTime.now(tz.local);
+    final due = tz.TZDateTime.from(goal.dueDate, tz.local);
 
     final List<Map<String, dynamic>> notifications = [
       {
-        'delay': due.subtract(const Duration(days: 3)).difference(now),
-        'text': 'Через 3 дня дедлайн по цели: ${goal.title}',
         'id': goal.id.hashCode + 1,
+        'offset': const Duration(days: 3),
+        'text': 'Через 3 дня дедлайн по цели: ${goal.title}',
       },
       {
-        'delay': due.subtract(const Duration(days: 1)).difference(now),
-        'text': 'Завтра дедлайн по цели: ${goal.title}',
         'id': goal.id.hashCode + 2,
+        'offset': const Duration(days: 1),
+        'text': 'Завтра дедлайн по цели: ${goal.title}',
       },
       {
-        'delay': due.subtract(const Duration(hours: 12)).difference(now),
-        'text': 'Через 12 часов дедлайн по цели: ${goal.title}',
         'id': goal.id.hashCode + 3,
+        'offset': const Duration(hours: 12),
+        'text': 'Через 12 часов дедлайн по цели: ${goal.title}',
       },
       {
-        'delay': due.subtract(const Duration(hours: 1)).difference(now),
-        'text': 'Через 1 час дедлайн по цели: ${goal.title}',
         'id': goal.id.hashCode + 4,
+        'offset': const Duration(hours: 1),
+        'text': 'Через 1 час дедлайн по цели: ${goal.title}',
       },
     ];
 
+    final prefs = await SharedPreferences.getInstance();
+
     for (final notif in notifications) {
-      final delay = notif['delay'] as Duration;
-      if (delay.inSeconds > 0) {
-        Timer(delay, () async {
-          await flutterLocalNotificationsPlugin.show(
-            notif['id'] as int,
-            'FitTask',
-            notif['text'] as String,
-            const NotificationDetails(
-              android: AndroidNotificationDetails(
-                'goals_channel',
-                'Уведомления целей',
-                importance: Importance.max,
-                priority: Priority.high,
-              ),
+      final notifTime = due.subtract(notif['offset'] as Duration);
+      if (notifTime.isAfter(now)) {
+        await flutterLocalNotificationsPlugin.zonedSchedule(
+          notif['id'],
+          'FitTask',
+          notif['text'],
+          notifTime,
+          const NotificationDetails(
+            android: AndroidNotificationDetails(
+              'goals_channel',
+              'Уведомления целей',
+              importance: Importance.max,
+              priority: Priority.high,
             ),
-          );
-          print('Показано уведомление: ${notif['text']}');
-        });
-        print('Таймер для уведомления: ${notif['text']} через ${delay.inSeconds} секунд');
+          ),
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          matchDateTimeComponents: DateTimeComponents.dateAndTime,
+        );
       }
     }
+
+    // Очищаем список отправленных уведомлений при добавлении новой цели
+    await prefs.remove('notif_${goal.id}');
   }
 
   @override

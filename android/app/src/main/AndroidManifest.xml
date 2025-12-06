@@ -1,8 +1,12 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.fittask">
+
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+
     <application
-        android:label="fittask"
-        android:name="${applicationName}"
+        android:label="FitTask"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
